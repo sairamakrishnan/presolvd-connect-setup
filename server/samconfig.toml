@@ -1,0 +1,12 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "tenantapp"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-wzwh76ee9zi9"
+s3_prefix = "tenantapp"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "TenantIdParameter=\"pooled\" CognitoUserPoolIdParameter=\"\" CognitoAppClientIdParameter=\"\" StageName=\"prod\" BootstrapStackName=\"serverless-saas\" LambdaReserveConcurrency=\"20\" LambdaCanaryDeploymentPreference=\"True\" InstanceAliasName=\"presolved\""
+image_repositories = []
