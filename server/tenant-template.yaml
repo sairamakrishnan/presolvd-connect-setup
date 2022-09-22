@@ -43,6 +43,12 @@ Parameters:
     Type: String
     Default: "True"
     Description: "Pass it as False if you want to disable the canary release for Lambda and don't want to wait for 5 mins to complete the release"
+  InstanceAliasName:
+    Type: String
+    Default: "presolved"
+    Description: >
+      Enter the instance name
+    AllowedPattern: '(?=^.{3,51}$)(?!^(\d+\.)+\d+$)(^(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])$)'
 Conditions:
   IsPooledDeploy: !Equals [ !Ref TenantIdParameter, pooled]
   IsSiloDeploy: !Not [!Equals [ !Ref TenantIdParameter, pooled]]
@@ -1322,7 +1328,387 @@ Resources:
       SettingsTableName: ServerlessSaaS-Settings  
       TenantId: !Ref TenantIdParameter  
       TenantApiGatewayUrl: !Sub "https://${ApiGatewayTenantApi}.execute-api.${AWS::Region}.amazonaws.com/prod/"
-  
+  BotRuntimeRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lexv2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: LexRuntimeRolePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'polly:SynthesizeSpeech'
+                  - 'comprehend:DetectSentiment'
+                Resource: '*'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b3485259-6829-4ff6-957e-e5e1f1e4bca7
+  PresolvedConnectInsuranceBot:
+    DependsOn: BotRuntimeRole
+    Type: 'AWS::Lex::Bot'
+    Properties:
+      Name: PresolvedInsuranceConnectBot
+      RoleArn: !GetAtt BotRuntimeRole.Arn
+      DataPrivacy:
+        ChildDirected: false
+      IdleSessionTTLInSeconds: 300
+      Description: To create insurance connect bot to serve customers
+      AutoBuildBotLocales: false
+      BotLocales:
+        - LocaleId: en_US
+          Description: PresolvedInsuranceConnectBotLocale
+          NluConfidenceThreshold: 0.4
+          VoiceSettings:
+            VoiceId: Ivy
+          SlotTypes:
+            - Name: PolicyNumber
+              Description: Policy number of a customer
+              SlotTypeValues:
+                - SampleValue:
+                    Value: '123456'
+                - SampleValue:
+                    Value: '333333'
+                - SampleValue:
+                    Value: '222222'
+                - SampleValue:
+                    Value: '12345'
+                - SampleValue:
+                    Value: '22334'
+                - SampleValue:
+                    Value: '122445'
+              ValueSelectionSetting:
+                ResolutionStrategy: ORIGINAL_VALUE
+          Intents:
+            - Name: TalkToAgent
+              Description: Intent to speak with an agent
+              SampleUtterances:
+                - Utterance: Speak with agent
+                - Utterance: talk to agent
+                - Utterance: customer service representative
+                - Utterance: agent
+                - Utterance: speak
+                - Utterance: talk
+              SlotPriorities:
+                - Priority: 1
+                  SlotName: AccountNumber
+              IntentConfirmationSetting:
+                PromptSpecification:
+                  MessageGroupsList:
+                    - Message:
+                        PlainTextMessage:
+                          Value: Thank you for contacting us.
+                  MaxRetries: 3
+                  AllowInterrupt: false
+                DeclinationResponse:
+                  MessageGroupsList:
+                    - Message:
+                        PlainTextMessage:
+                          Value: Sorry for the inconvinience
+                  AllowInterrupt: false
+              Slots:
+                - Name: AccountNumber
+                  Description: Account number of a customer
+                  SlotTypeName: AMAZON.Number
+                  ValueElicitationSetting:
+                    SlotConstraint: Required
+                    PromptSpecification:
+                      MessageGroupsList:
+                        - Message:
+                            PlainTextMessage:
+                              Value: Please say or Enter your account number
+                      MaxRetries: 3
+                      AllowInterrupt: true
+            - Name: CertificateOfInsurance
+              Description: help to receive COI
+              SampleUtterances:
+                - Utterance: Certificate of insurance
+                - Utterance: Need certificate
+                - Utterance: Insurance certificate
+                - Utterance: proof of insurance
+              IntentConfirmationSetting:
+                PromptSpecification:
+                  MessageGroupsList:
+                    - Message:
+                        PlainTextMessage:
+                          Value: test
+                  MaxRetries: 3
+                  AllowInterrupt: false
+                DeclinationResponse:
+                  MessageGroupsList:
+                    - Message:
+                        PlainTextMessage:
+                          Value: test
+                  AllowInterrupt: true
+              SlotPriorities:
+                - Priority: 1
+                  SlotName: AccountNumber
+              Slots:
+                - Name: AccountNumber
+                  Description: something
+                  SlotTypeName: AMAZON.Number
+                  ValueElicitationSetting:
+                    SlotConstraint: Required
+                    PromptSpecification:
+                      MessageGroupsList:
+                        - Message:
+                            PlainTextMessage:
+                              Value: Please Say or enter your account number
+                      MaxRetries: 3
+                      AllowInterrupt: false
+            - Name: FallbackIntent
+              Description: Default intent when no other intent matches
+              ParentIntentSignature: AMAZON.FallbackIntent
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 51cd6dd7-78fd-42bb-8874-b9de05a7c0b7
+  PresolvedInsuranceConnectBot:
+    DependsOn: PresolvedConnectInsuranceBot
+    Type: 'AWS::Lex::BotVersion'
+    Properties:
+      BotId: !Ref PresolvedConnectInsuranceBot
+      BotVersionLocaleSpecification:
+        - LocaleId: en_US
+          BotVersionLocaleDetails:
+            SourceBotVersion: DRAFT
+      Description: Initial Version
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 1276dd59-ac75-408f-b5ac-6c907db085d4
+  PresolvedInsuranceConnectBotCFN:
+    DependsOn: PresolvedInsuranceConnectBot
+    Type: 'AWS::Lex::BotAlias'
+    Properties:
+      BotId: !Ref PresolvedConnectInsuranceBot
+      BotAliasName: PesolvedInsuranceConnectv1Alias
+      BotVersion: !GetAtt PresolvedInsuranceConnectBot.BotVersion
+      SentimentAnalysisSettings:
+        DetectSentiment: true
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 919c5dfe-d080-42db-9264-5db29776b229
+  AWSConnectIns:
+    Type: 'AWS::Connect::Instance'
+    Properties:
+      Attributes:
+        AutoResolveBestVoices: true
+        ContactflowLogs: true
+        ContactLens: true
+        EarlyMedia: true
+        InboundCalls: true
+        OutboundCalls: true
+        UseCustomTTSVoices: false
+      IdentityManagementType: CONNECT_MANAGED
+      InstanceAlias: !Ref InstanceAliasName
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 4365a55a-b379-4eb7-8fdb-9360cf683b85
+  PhoneNumber:
+    Type: 'AWS::Connect::PhoneNumber'
+    Properties:
+      TargetArn: !GetAtt AWSConnectIns.Arn
+      Description: phone number created using cfn
+      Type: DID
+      CountryCode: US
+      Tags:
+        - Key: testkey
+          Value: testValue
+  myConnectContactFlow:
+    DependsOn: CustomResourceHelper
+    Type: 'AWS::Connect::ContactFlow'
+    Properties:
+      Name: presolvedConnectInsuranceFlow
+      Description: flow created using cfn
+      InstanceArn: !GetAtt AWSConnectIns.Arn
+      Type: CONTACT_FLOW
+      Content: >-
+        { "Version": "2019-10-30",
+
+        "StartAction": "12345678-1234-1234-1234-123456789012", "Metadata": {
+        "EntryPointPosition": { "x": 88, "y": 100 }, "ActionMetadata": {
+        "12345678-1234-1234-1234-123456789012": { "Position": { "x": 270, "y":
+        98 } }, "abcdef-abcd-abcd-abcd-abcdefghijkl": { "Position": { "x": 545,
+        "y": 92 } }
+
+        } }, "Actions": [
+
+        { "Identifier": "12345678-1234-1234-1234-123456789012", "Type":
+        "MessageParticipant", "Transitions": { "NextAction":
+        "abcdef-abcd-abcd-abcd-abcdefghijkl", "Errors": [], "Conditions": [] },
+        "Parameters": { "Text": "Thanks for calling the sample flow!" } }, {
+        "Identifier": "abcdef-abcd-abcd-abcd-abcdefghijkl", "Type":
+        "DisconnectParticipant", "Transitions": {}, "Parameters": {} } ] }
+      Tags:
+        - Key: name
+          Value: presolved
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: a4a2e142-25f1-4508-9c01-0ec38a8c83b7
+  myConnectContactMainFlow:
+    DependsOn: ConfigureConnectBot
+    Type: 'AWS::Connect::ContactFlow'
+    Properties:
+      Name: presolvedConnectInsuranceMainFlow
+      Description: flow created using cfn
+      InstanceArn: !GetAtt AWSConnectIns.Arn
+      Type: CONTACT_FLOW
+      Content: >-
+        {"Version":"2019-10-30","StartAction":"25538593-d7b7-47cd-9507-2f757d81f5d2","Metadata":{"entryPointPosition":{"x":15,"y":15},"snapToGrid":false,"ActionMetadata":{"25538593-d7b7-47cd-9507-2f757d81f5d2":{"position":{"x":220,"y":20},"useDynamic":false},"ce951a90-3356-42bd-bc5e-6e5db22db4c9":{"position":{"x":1359,"y":436}},"84813139-7a0c-4ab2-9931-7c9c05096ed4":{"position":{"x":1107,"y":308},"useDynamic":false},"e4dfda04-ac2b-4868-9f2f-5fbc8acdd210":{"position":{"x":491,"y":17},"conditionMetadata":[{"id":"6cff7f60-c7d5-4e85-9694-40332429b340","value":"TalkToAgent"},{"id":"6acfdc12-1b70-474a-a475-66c2463948be","value":"CertificateOfInsurance"}],"useDynamic":false,"dynamicMetadata":{},"useLexBotDropdown":true,"useDynamicLexBotArn":false,"lexV2BotName":"PresolvedInsuranceConnectBot","lexV2BotAliasName":"PesolvedInsuranceConnectv1Alias"},"a633921c-3d90-4a69-917b-6ea4c3e6022f":{"position":{"x":812,"y":173},"useDynamic":true,"queue":"Queue.Name"}}},"Actions":[{"Identifier":"25538593-d7b7-47cd-9507-2f757d81f5d2","Parameters":{"Text":"Thank
+        you for calling.Your call is very important to us. Please keep your
+        policy number or account number ready for best user
+        experience."},"Transitions":{"NextAction":"e4dfda04-ac2b-4868-9f2f-5fbc8acdd210","Errors":[{"NextAction":"e4dfda04-ac2b-4868-9f2f-5fbc8acdd210","ErrorType":"NoMatchingError"}],"Conditions":[]},"Type":"MessageParticipant"},{"Identifier":"ce951a90-3356-42bd-bc5e-6e5db22db4c9","Type":"DisconnectParticipant","Parameters":{},"Transitions":{}},{"Identifier":"84813139-7a0c-4ab2-9931-7c9c05096ed4","Transitions":{"NextAction":"ce951a90-3356-42bd-bc5e-6e5db22db4c9","Errors":[{"NextAction":"ce951a90-3356-42bd-bc5e-6e5db22db4c9","ErrorType":"NoMatchingError"},{"NextAction":"ce951a90-3356-42bd-bc5e-6e5db22db4c9","ErrorType":"QueueAtCapacity"}],"Conditions":[]},"Type":"TransferContactToQueue"},{"Identifier":"e4dfda04-ac2b-4868-9f2f-5fbc8acdd210","Parameters":{"Text":"Press
+        or say one to talk to an agent press or say 2 to get certificate of
+        insurance","LexV2Bot":{"AliasArn":"arn:aws:lex:us-east-1:851171462885:bot-alias/C0RFA8BNSB/TSTALIASID"}},"Transitions":{"NextAction":"a633921c-3d90-4a69-917b-6ea4c3e6022f","Errors":[{"NextAction":"a633921c-3d90-4a69-917b-6ea4c3e6022f","ErrorType":"NoMatchingError"},{"NextAction":"a633921c-3d90-4a69-917b-6ea4c3e6022f","ErrorType":"NoMatchingCondition"}],"Conditions":[{"NextAction":"a633921c-3d90-4a69-917b-6ea4c3e6022f","Condition":{"Operator":"Equals","Operands":["TalkToAgent"]}},{"NextAction":"a633921c-3d90-4a69-917b-6ea4c3e6022f","Condition":{"Operator":"Equals","Operands":["CertificateOfInsurance"]}}]},"Type":"ConnectParticipantWithLexBot"},{"Identifier":"a633921c-3d90-4a69-917b-6ea4c3e6022f","Parameters":{"QueueId":"$.Queue.Name"},"Transitions":{"NextAction":"84813139-7a0c-4ab2-9931-7c9c05096ed4","Errors":[{"NextAction":"84813139-7a0c-4ab2-9931-7c9c05096ed4","ErrorType":"NoMatchingError"}],"Conditions":[]},"Type":"UpdateContactTargetQueue"}]}
+      Tags:
+        - Key: name
+          Value: presolved
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: a4a2e142-25f1-4508-9c01-0ec38a8c83b7
+  myDynamoDBTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: ConfigKey
+          AttributeType: S
+        - AttributeName: ConfigValue
+          AttributeType: 'N'
+      KeySchema:
+        - AttributeName: ConfigKey
+          KeyType: HASH
+        - AttributeName: ConfigValue
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName: PresolvedInsuranceConnectConfigs
+      GlobalSecondaryIndexes:
+        - IndexName: myGSI
+          KeySchema:
+            - AttributeName: ConfigKey
+              KeyType: HASH
+            - AttributeName: ConfigValue
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - ConfigValues
+            ProjectionType: INCLUDE
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+        - IndexName: myGSI2
+          KeySchema:
+            - AttributeName: ConfigKey
+              KeyType: HASH
+            - AttributeName: ConfigValue
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - ConfigValues
+            ProjectionType: INCLUDE
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+      LocalSecondaryIndexes:
+        - IndexName: myLSI
+          KeySchema:
+            - AttributeName: ConfigKey
+              KeyType: HASH
+            - AttributeName: ConfigValue
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - ConfigValues
+            ProjectionType: INCLUDE
+  CustomResourceHelper:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Description: Custom resources builder lambda
+      CodeUri: custom-resource-utils/
+      Handler: cr_helper.lambda_handler
+      MemorySize: 256
+      Role: !GetAtt CustomResourceHelperIamRole.Arn
+      Runtime: python3.8
+      Timeout: 300
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 5d78cba8-e883-42f0-8656-c3285d63e520
+  CustomResourceHelperIamRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: custom-resource-loggroup-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  - !Sub >-
+                    arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
+        - PolicyName: custom-resource-connect-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'connect:AssociateBot'
+                  - 'connect:DisassociateBot'
+                Resource:
+                  - !Sub >-
+                    arn:${AWS::Partition}:connect:${AWS::Region}:${AWS::AccountId}:instance/!GetAttAWSConnectIns.Id
+                  - !Sub >-
+                    arn:${AWS::Partition}:connect:${AWS::Region}:${AWS::AccountId}:instance/!GetAttAWSConnectIns.Id/*
+              - Effect: Allow
+                Action:
+                  - 'lex:ListBotAliases'
+                  - 'lex:UpdateResourcePolicy'
+                  - 'lex:DescribeResourcePolicy'
+                  - 'lex:CreateResourcePolicy'
+                  - 'lex:DescribeBotAlias'
+                Resource:
+                  - !GetAtt PresolvedInsuranceConnectBotCFN.Arn
+                  - !GetAtt PresolvedConnectInsuranceBot.Arn
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: '*'
+  ConfigureConnectBot:
+    Type: 'Custom::ConfigConnectBot'
+    Properties:
+      customAction: configureConnectBot
+      Version: 1
+      ServiceToken: !GetAtt CustomResourceHelper.Arn
+      Region: !Ref 'AWS::Region'
+      instanceId: !GetAtt AWSConnectIns.Id
+      flowId: !Ref myConnectContactFlow
+      botAliasArn: !GetAtt PresolvedInsuranceConnectBotCFN.Arn
 Outputs:
   TenantApiGatewayId:
     Description: Id for Tenant API Gateway

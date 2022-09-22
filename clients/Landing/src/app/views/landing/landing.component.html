@@ -1,8 +1,10 @@
 <div class="animated fadeIn">
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="#">AWS Serverless SaaS Reference Architecture</a>
+    <a class="navbar-brand" href="#">Presolved - A New Beginning</a>
     <button
       aria-controls="navbarSupportedContent"
+      (click)="IsCollapsed = !IsCollapsed"
+      [attr.aria-expanded]="!IsCollapsed"
       class="navbar-toggler"
       type="button"
       aria-label="Toggle navigation"
@@ -13,6 +15,8 @@
     <div
       class="collapse navbar-collapse"
       id="navbarSupportedContent"
+      [collapse]="IsCollapsed"
+      [isAnimated]="true"
     >
       <ul class="navbar-nav mr-auto">
         <li class="nav-item active">
@@ -27,9 +31,9 @@
     </div>
   </nav>
 
-  <header class="d-flex align-items-center">
+  <header class="bg-image d-flex align-items-center">
     <div class="container">
-      <h1>Serverless SaaS Reference Architecture</h1>
+      <h1>Presolved Contact Center For Insurance</h1>
       <h2>It's so nice it blows your mind.</h2>
       <a href="" (click)="register()" class="btn btn-transparent">Sign up now!</a>
     </div>
@@ -38,13 +42,35 @@
   <section>
     <div class="container">
       <div class="row">
-        <div class="text--center">
-          <h3>Serverless SaaS Reference Architecture is so awesome.</h3>
+        <div class="col-sm-4 text--center">
+          <carousel [interval]="false">
+            <slide>
+              <img
+                src="https://d2908q01vomqb2.cloudfront.net/ca3512f4dfa95a03169c5a670a4c91a19b3077b4/2018/08/23/eks-orig.jpg"
+                alt="First slide"
+                style="display: block; width: 100%"
+              />
+            </slide>
+            <slide>
+              <img
+                src="https://community-cdn-digitalocean-com.global.ssl.fastly.net/variants/UD33x1XYKUSYG3C5JSz2MPAf/035575f2985fe451d86e717d73691e533a1a00545d7230900ed786341dc3c882"
+                alt="Second slide"
+                style="display: block; width: 100%"
+              />
+            </slide>
+            <slide>
+              <img
+                src="https://picsum.photos/id/1031/900/500"
+                alt="Third slide"
+                style="display: block; width: 100%"
+              />
+            </slide>
+          </carousel>
+        </div>
+        <div class="col-sm-7 details">
+          <h3>We help you to provide world class customer service experience</h3>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Facere
-            temporibus omnis illum, officia. Architecto voluptatibus commodi
-            voluptatem perspiciatis eos possimus, eius at molestias quaerat
-            magnam? Odio qui quos ipsam natus.
+            You can enable your customer service on click of a button.
           </p>
         </div>
       </div>
@@ -56,30 +82,24 @@
       <div class="col-3 features">
         <i class="fa fa-bolt"></i>
         <p>
-          Serverless SaaS Reference Architecture so awesome. Makes you awesome - go sign up!
+          Presolved is so awesome. Makes you awesome - go sign up!
         </p>
       </div>
       <div class="col-3 features">
         <i class="fa fa-bank"></i>
-        <p>
-          Serverless SaaS Reference Architecture so great. Makes you even greater - go sign
-          up now. Super cheap deal!
-        </p>
       </div>
       <div class="col-3 features">
         <i class="fa fa-heart"></i>
-        <p>Feel lonely? Go sign up and have a friend!</p>
+        <p>Sign up and experience it.</p>
       </div>
     </div>
   </section>
 
   <section class="section--primary--alt">
     <div class="container">
-      <h3>Take Serverless SaaS Reference Architecture with you everywhere you go.</h3>
+      <h3>Provide world class customer service experience to your customers.</h3>
       <p>
-        Serverless SaaS Reference Architecture is all you need. Anywhere - ever. Lorem ipsum
-        dolor sit amet, consectetur adipisicing elit. Expedita sapiente hic
-        voluptatum quo sunt totam accusamus distinctio minus aliquid quis!
+      
       </p>
     </div>
   </section>
@@ -88,15 +108,14 @@
     <div class="container">
       <blockquote class="testimonial">
         <p>
-          Love Serverless SaaS Reference Architecture. So nice! So good! Could not live
-          without!
+          I am amazed with the technology presolved bringing to us.
         </p>
         <cite> Satisfied Customer </cite>
       </blockquote>
     </div>
   </section>
 
-  <section class="section--primary--alt bg-image-2">
+  <section class="section--primary--alt bg-image bg-image-2">
     <div class="container text--center">
       <h3>Reasons to sign up this product:</h3>
       <div class="col-5 text--left">
@@ -105,7 +124,7 @@
           <li>Its awesome</li>
           <li>It makes you happy</li>
           <li>It brings world peace</li>
-          <li>Its free!</li>
+         <li>Its free!</li>
         </ul>
       </div>
       <div class="col-5 text--left">
@@ -134,7 +153,7 @@
         <li><a href="#">Contact</a></li>
         <li><a href="#">Mainpage</a></li>
       </ul>
-      <p>&copy; 2022 AWS SaaS Factory. All rights reserved.</p>
+      <p>&copy; 2022. All rights reserved.</p>
     </div>
   </footer>
 </div>
