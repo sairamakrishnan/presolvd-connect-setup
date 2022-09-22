@@ -2,9 +2,9 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "tenantapp"
+stack_name = "tenanttestapp"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-wzwh76ee9zi9"
-s3_prefix = "tenantapp"
+s3_prefix = "tenanttestapp"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
