@@ -133,7 +133,7 @@ def create_stack(stack, template_url, params):
     Throws:
         Exception: Any exception thrown by .create_stack()
     """
-    cf.create_stack(StackName=stack, TemplateURL=template_url, Capabilities=['CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'], Parameters=params)
+    cf.create_stack(StackName=stack, TemplateURL=template_url, Capabilities=['CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'], Parameters=null)
  
 def get_stack_status(stack):
     """Get the status of an existing CloudFormation stack
