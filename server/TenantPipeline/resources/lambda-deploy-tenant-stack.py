@@ -368,7 +368,7 @@ def get_tenant_params(tenantId):
     param_appclientid['ParameterValue'] = appClientId
     params.append(param_appclientid)
 
-    return params
+    return []
 
 def add_parameter(params, parameter_key, parameter_value):
     parameter = {}
