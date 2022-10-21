@@ -27,7 +27,7 @@ phases:
   build:
     commands:
       # Use Build phase to build your artifacts (compile, etc.)
-      - sam build -t tenant-template.yaml --capabilities CAPABILITY_IAM
+      - sam build -t tenant-template.yaml
 
   post_build:
     commands:
